@@ -24,7 +24,7 @@ const customNetwork = {
 
 // Generate Bitcoin Mnemonic
 app.get('/generate', (req, res) => {
-    const mnemonic = bip39.generateMnemonic();
+    const mnemonic = bip39.generateMnemonic(192);
     const seed = bip39.mnemonicToSeedSync(mnemonic);
     const root = bip32.fromSeed(seed);
   
