@@ -39,6 +39,38 @@ app.get('/generate', (req, res) => {
     res.json({ mnemonic, privateKey, address });
   });
 
+// Access Existing Wallet using provided mnemonic
+app.post('/access-wallet', (req, res) => {
+  const providedMnemonic = req.body.mnemonic; // Get mnemonic from request body
+
+  try {
+    // Verify if the provided mnemonic is valid
+    if (!bip39.validateMnemonic(providedMnemonic)) {
+      return res.status(400).json({ error: 'Invalid mnemonic' });
+    }
+
+    // Derive wallet information from the provided mnemonic
+    const seed = bip39.mnemonicToSeedSync(providedMnemonic);
+    const root = bip32.fromSeed(seed);
+
+    // Derive a Bitcoin address from the root
+    const childNode = root.derivePath("m/44'/0'/0'/0/0");
+
+    // Get the private key in Wallet Import Format (WIF)
+    const privateKey = childNode.toWIF();
+
+    const { address } = bitcoin.payments.p2pkh({
+      pubkey: childNode.publicKey,
+      network: customNetwork,
+    });
+
+    res.json({ privateKey, address });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
