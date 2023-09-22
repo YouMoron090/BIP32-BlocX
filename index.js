@@ -74,13 +74,21 @@ app.post('/access-wallet', (req, res) => {
 // Generate Subaddress for a Main Address
 app.post('/generate-subaddress', (req, res) => {
     const mainAddress = req.body.mainAddress;
-    const mainAddressNode = bitcoin.payments.p2pkh({ address: mainAddress, network: customNetwork }).publicKey;
+    const mainAddressPrivateKey = req.body.mainAddressPrivateKey;
+
+    // Check if the mainAddressPrivateKey is provided
+    if (!mainAddressPrivateKey || typeof mainAddressPrivateKey !== 'string' || mainAddressPrivateKey.length !== 64) {
+        return res.status(400).json({ error: 'Invalid mainAddressPrivateKey' });
+    }
+
+    // Create a bip32 node from the main address's private key
+    const mainAddressNode = bip32.fromPrivateKey(Buffer.from(mainAddressPrivateKey, 'hex'), customNetwork);
 
     // Derive a subaddress from the main address (you can adjust the path as needed)
     const subAddressNode = mainAddressNode.derive(0).derive(0);
 
     // Get the subaddress in Base58 format
-    const subAddress = bitcoin.payments.p2pkh({ pubkey: subAddressNode, network: customNetwork }).address;
+    const subAddress = bitcoin.payments.p2pkh({ pubkey: subAddressNode.publicKey, network: customNetwork }).address;
 
     res.json({ subAddress });
 });
