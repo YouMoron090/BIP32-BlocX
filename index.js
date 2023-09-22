@@ -74,13 +74,13 @@ app.post('/access-wallet', (req, res) => {
 // Generate Subaddress for a Main Address
 app.post('/generate-subaddress', (req, res) => {
     const mainAddress = req.body.mainAddress;
-    const mainAddressNode = bitcoin.address.fromBase58Check(mainAddress);
+    const mainAddressNode = bitcoin.payments.p2pkh({ address: mainAddress, network: customNetwork }).publicKey;
 
     // Derive a subaddress from the main address (you can adjust the path as needed)
     const subAddressNode = mainAddressNode.derive(0).derive(0);
 
     // Get the subaddress in Base58 format
-    const subAddress = bitcoin.address.toBase58Check(subAddressNode.publicKey, customNetwork.pubKeyHash);
+    const subAddress = bitcoin.payments.p2pkh({ pubkey: subAddressNode, network: customNetwork }).address;
 
     res.json({ subAddress });
 });
