@@ -93,6 +93,46 @@ app.post('/generate-subaddress', (req, res) => {
     res.json({ subAddress });
 });
 
+// Retrieve Private Key by Mnemonic and Address
+app.post('/get-private-key', (req, res) => {
+    const mnemonic = req.body.mnemonic;
+    const address = req.body.address;
+
+    try {
+        // Verify if the provided mnemonic is valid
+        if (!bip39.validateMnemonic(mnemonic)) {
+            return res.status(400).json({ error: 'Invalid mnemonic' });
+        }
+
+        // Derive wallet information from the provided mnemonic
+        const seed = bip39.mnemonicToSeedSync(mnemonic);
+        const root = bip32.fromSeed(seed);
+
+        // Derive the child node corresponding to the provided address
+        const addressNode = root.derivePath("m/44'/0'/0'/0/0"); // Adjust the path as needed
+
+        // Generate the address from the derived node
+        const { address: derivedAddress } = bitcoin.payments.p2pkh({
+            pubkey: addressNode.publicKey,
+            network: customNetwork,
+        });
+
+        // Check if the derived address matches the provided address
+        if (derivedAddress !== address) {
+            return res.status(400).json({ error: 'Address does not match the mnemonic' });
+        }
+
+        // Get the private key in Wallet Import Format (WIF)
+        const privateKey = addressNode.toWIF();
+
+        res.json({ privateKey });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
