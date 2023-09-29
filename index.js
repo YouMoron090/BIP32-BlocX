@@ -52,10 +52,10 @@ app.post('/access-wallet', (req, res) => {
 
     // Derive wallet information from the provided mnemonic
     const seed = bip39.mnemonicToSeedSync(providedMnemonic);
-    const root = bip32.fromSeed(seed);
+    const root = bip32.fromSeed(seed, customNetwork);
 
     // Derive a Bitcoin address from the root
-    const childNode = root.derivePath("m/44'/0'/0'/0/0");
+    const childNode = root.derivePath("m/44'/5'/950'/0/0");
 
     // Get the private key in Wallet Import Format (WIF)
     const privateKey = childNode.toWIF();
