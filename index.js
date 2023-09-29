@@ -20,16 +20,17 @@ const customNetwork = {
     },
     pubKeyHash: 25, // Custom public key hash prefix (PUBKEY_ADDRESS)
     scriptHash: 26, // Custom script hash prefix (SCRIPT_ADDRESS)
+    wif: 153,
   };
 
 // Generate Bitcoin Mnemonic
 app.get('/generate', (req, res) => {
     const mnemonic = bip39.generateMnemonic(192);
     const seed = bip39.mnemonicToSeedSync(mnemonic);
-    const root = bip32.fromSeed(seed);
+    const root = bip32.fromSeed(seed, customNetwork);
   
     // Derive a Bitcoin address from the root
-    const childNode = root.derivePath("m/44'/0'/0'/0/0");
+    const childNode = root.derivePath("m/44'/5'/950'/0/0");
     
     // Get the private key in Wallet Import Format (WIF)
     const privateKey = childNode.toWIF();
