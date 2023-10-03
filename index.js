@@ -134,6 +134,30 @@ app.post('/get-private-key', (req, res) => {
 });
 
 
+app.post('/addresslist', (req, res) => {
+  // const mnemonic = bip39.generateMnemonic();
+  const mnemonic = req.body.mnemonic;
+
+  const seed = bip39.mnemonicToSeedSync(mnemonic);
+  const root = bip32.fromSeed(seed, customNetwork);
+  console.log(seed)
+
+  let addresses = [];
+  for (let i = 0; i < 10; i++) {
+
+    // Derive a Bitcoin address from the root
+    const childNode = root.derivePath("m/44'/5'/950'/0/" + i);
+
+    // Get the private key in Wallet Import Format (WIF)
+    const privateKey = childNode.toWIF();
+
+    const { address } = bitcoin.payments.p2pkh({ pubkey: childNode.publicKey, network: customNetwork });
+    addresses.push({ privateKey, address });
+  }
+  res.json({ mnemonic, addressList: addresses });
+});
+
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
