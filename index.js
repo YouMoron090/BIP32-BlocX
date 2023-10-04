@@ -186,7 +186,7 @@ app.post('/get-mnemonic', (req, res) => {
     res.json({ mnemonic });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.send(error);
   }
 });
 
