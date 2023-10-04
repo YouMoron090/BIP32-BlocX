@@ -158,6 +158,40 @@ app.post('/addresslist', (req, res) => {
 });
 
 
+//GET MNEMONICS
+// Retrieve Mnemonic by Address and Private Key
+app.post('/get-mnemonic', (req, res) => {
+  const address = req.body.address;
+  const privateKey = req.body.privateKey;
+
+  try {
+    // Create a bip32 node from the private key
+    const rootNode = bip32.fromPrivateKey(Buffer.from(privateKey, 'hex'), customNetwork);
+
+    // Derive a Bitcoin address from the derived node
+    const { address: derivedAddress } = bitcoin.payments.p2pkh({
+      pubkey: rootNode.publicKey,
+      network: customNetwork,
+    });
+
+    // Check if the derived address matches the provided address
+    if (derivedAddress !== address) {
+      return res.status(400).json({ error: 'Address does not match the private key' });
+    }
+
+    // Derive the mnemonic from the root node's private key
+    const seedBuffer = rootNode.privateKey;
+    const mnemonic = bip39.entropyToMnemonic(seedBuffer.slice(0, 16)); // 16 bytes of entropy
+
+    res.json({ mnemonic });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
