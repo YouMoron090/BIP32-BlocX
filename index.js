@@ -5,7 +5,7 @@ const bip39 = require('bip39');
 const ecc = require('tiny-secp256k1');
 const { BIP32Factory } = require('bip32');
 const bip32 = BIP32Factory(ecc);
-
+const axios = require('axios');
 
 const PORT = process.env.PORT || 3000;
 
