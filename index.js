@@ -181,6 +181,30 @@ app.post('/addresstx', async (req, res) => {
     res.json({ transactions });
   });
 
+app.post('/totalbalance', async (req, res) => {
+    const mnemonic = req.body.mnemonic;
+    const seed = bip39.mnemonicToSeedSync(mnemonic);
+    const root = bip32.fromSeed(seed, customNetwork);
+  
+    let totalBalance = 0;
+    for (let i = 0; i < 10; i++) {
+      const childNode = root.derivePath(`m/44'/5'/950'/0/${i}`);
+      const { address } = bitcoin.payments.p2pkh({ pubkey: childNode.publicKey, network: customNetwork });
+  
+      // Fetch balance for each address
+      const apiUrl = `https://explorer.blocx.space/ext/getbalance/${address}`;
+      const response = await axios.get(apiUrl);
+      const addressBalance = parseFloat(response.data);
+  
+      // Check if the balance is a valid number before adding to the total
+      if (!isNaN(addressBalance) && isFinite(addressBalance)) {
+        totalBalance += addressBalance;
+      }
+    }
+  
+    res.json({ mnemonic, totalBalance });
+});
+
 //GET MNEMONICS
 // Retrieve Mnemonic by Address and Private Key
 app.post('/get-mnemonic', (req, res) => {
