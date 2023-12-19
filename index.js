@@ -157,6 +157,29 @@ app.post('/addresslist', (req, res) => {
   res.json({ mnemonic, addressList: addresses });
 });
 
+app.post('/addresstx', async (req, res) => {
+    const mnemonic = req.body.mnemonic;
+    const seed = bip39.mnemonicToSeedSync(mnemonic);
+    const root = bip32.fromSeed(seed, customNetwork);
+  
+    let addresses = [];
+    for (let i = 0; i < 10; i++) {
+      const childNode = root.derivePath(`m/44'/5'/950'/0/${i}`);
+      const { address } = bitcoin.payments.p2pkh({ pubkey: childNode.publicKey, network: customNetwork });
+      addresses.push({ privateKey: childNode.toWIF(), address });
+    }
+  
+    // Fetch transaction details for each address
+    const transactionsPromises = addresses.map(async ({ address }) => {
+      const apiUrl = `https://explorer.blocx.space/ext/getaddresstxs/${address}/0/50`;
+      const response = await axios.get(apiUrl);
+      return { address, transactions: response.data };
+    });
+  
+    const transactions = await Promise.all(transactionsPromises);
+  
+    res.json({ transactions });
+  });
 
 //GET MNEMONICS
 // Retrieve Mnemonic by Address and Private Key
