@@ -204,7 +204,15 @@ app.post('/addresstxall', async (req, res) => {
             // Add "Amount" and "type" entries to each transaction
             const transactionsWithAmountAndType = transactions.map(transaction => {
                 const amount = Math.abs(transaction.sent - transaction.received);
-                const type = amount >= 0 ? 'Receive' : 'Sent';
+                const amountsign = transaction.sent - transaction.received;
+                // console.log(amountsign)
+                let type ;
+                if(amountsign>=0){
+                    type = "Receive" ;
+                }
+                else{
+                    type = "Sent" ;
+                }
                 return { ...transaction, amount, type };
             });
 
