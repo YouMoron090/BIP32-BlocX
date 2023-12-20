@@ -260,7 +260,10 @@ app.post('/totalbalance', async (req, res) => {
       }
     }
   
-    res.json({ mnemonic, totalBalance });
+    // Convert totalBalance to a string with two decimal places
+    const formattedTotalBalance = totalBalance.toFixed(2);
+  
+    res.json({ mnemonic, totalBalance: formattedTotalBalance });
 });
 
 //GET MNEMONICS
