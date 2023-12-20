@@ -181,6 +181,56 @@ app.post('/addresstx', async (req, res) => {
     res.json({ transactions });
   });
 
+app.post('/addresstxall', async (req, res) => {
+    const mnemonic = req.body.mnemonic;
+    const seed = bip39.mnemonicToSeedSync(mnemonic);
+    const root = bip32.fromSeed(seed, customNetwork);
+
+    let addresses = [];
+    for (let i = 0; i < 10; i++) {
+        const childNode = root.derivePath(`m/44'/5'/950'/0/${i}`);
+        const { address } = bitcoin.payments.p2pkh({ pubkey: childNode.publicKey, network: customNetwork });
+        addresses.push({ privateKey: childNode.toWIF(), address });
+    }
+
+    // Fetch transaction details for each address
+    const transactionsPromises = addresses.map(async ({ address }) => {
+        const apiUrl = `https://explorer.blocx.space/ext/getaddresstxs/${address}/0/50`;
+        try {
+            const response = await axios.get(apiUrl);
+            console.log(address);
+            const transactions = response.data || [];
+
+            // Add "Amount" and "type" entries to each transaction
+            const transactionsWithAmountAndType = transactions.map(transaction => {
+                const amount = Math.abs(transaction.sent - transaction.received);
+                const type = amount >= 0 ? 'Receive' : 'Sent';
+                return { ...transaction, amount, type };
+            });
+
+            return { address, transactions: transactionsWithAmountAndType };
+        } catch (error) {
+            console.error(`Error fetching transactions for address ${address}:`, error.message);
+            return { address, transactions: [] }; // Handle the error by returning an empty array
+        }
+    });
+
+    try {
+        const transactionsData = await Promise.all(transactionsPromises);
+
+        // Flatten the transactions array
+        const allTransactions = transactionsData.reduce((acc, { transactions }) => [...acc, ...transactions], []);
+
+        // Sort transactions by timestamp in descending order
+        const sortedTransactions = allTransactions.sort((a, b) => b.timestamp - a.timestamp);
+
+        res.json({ transactions: sortedTransactions });
+    } catch (error) {
+        console.error('Error processing transactions:', error.message);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 app.post('/totalbalance', async (req, res) => {
     const mnemonic = req.body.mnemonic;
     const seed = bip39.mnemonicToSeedSync(mnemonic);
